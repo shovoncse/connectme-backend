@@ -1,25 +1,39 @@
 {
   "name": "connectme",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "connectme backend",
+  "main": "server.js",
   "scripts": {
-    "build": "npx tsc",
-    "start": "node index.js",
-    "devStart": "concurrently \"npx tsc --watch\" \"nodemon -q index.js\""
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "start": "node backend/server.js",
+    "server": "nodemon backend/server.js",
+    "client": "npm run dev --prefix frontend",
+    "test:client": "cd frontend && npm run test",
+    "build:client": "npm run build --prefix frontend",
+    "data:import": "node backend/seeder",
+    "data:destroy": "node backend/seeder -d",
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix frontend && npm run build --prefix frontend"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/cors": "^2.8.13",
-    "@types/express": "^4.17.17",
-    "@types/node": "^18.15.3",
-    "@types/pg": "^8.6.6",
-    "concurrently": "^7.6.0",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.27.1",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "nodemon": "^2.0.21",
-    "pg": "^8.10.0"
+    "dompurify": "^2.3.4",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "jsdom": "^19.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.12.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.3",
+    "socket.io": "^4.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^6.0.0",
+    "nodemon": "^2.0.19"
   }
 }
