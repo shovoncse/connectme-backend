@@ -10,18 +10,9 @@ const postSchema = mongoose.Schema(
     postContent: {
       type: String,
     },
-    images: {
-      type: [
-        {
-          secure_url: {
-            type: String,
-          },
-          public_id: {
-            type: String,
-          },
-        },
-      ],
-      default: [],
+    image: {
+      type: String,
+      default: "",
     },
     isEdited: {
       type: Boolean,
