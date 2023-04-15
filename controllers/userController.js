@@ -33,6 +33,14 @@ const loginUser = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      username: user.username,
+      bio: user.bio,
+      profession: user.profession,
+      education: user.education,
+      location: user.location,
+      country: user.country,
+      image: user.image,
+      cover: user.cover,
       accessToken: accessToken,
     });
   } else {
@@ -104,7 +112,7 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route PUT /api/users
 // @access Private
 const editUser = asyncHandler(async (req, res) => {
-  let { 
+  let {
     id,
     name,
     username,
@@ -115,9 +123,9 @@ const editUser = asyncHandler(async (req, res) => {
     country,
     profession,
     education,
-   } = req.body;
+  } = req.body;
 
-   username = username.toLowerCase().replace(/\s+/g, '');
+  username = username.toLowerCase().replace(/\s+/g, '');
 
   if (username.length > 15) {
     res.status(401);
@@ -183,6 +191,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
   const username = req.params.id;
 
   const user = await User.findOne({ username: username });
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
 
   const userData = {
     _id: user._id,
@@ -201,10 +213,31 @@ const getUserProfile = asyncHandler(async (req, res) => {
   const posts = await Post.find({ user: user._id })
     .populate('user', 'id name username image country')
     .sort({ createdAt: -1 });
-
   res.json({ user: userData, posts });
 });
 
+// @desc useresname exisiting
+// @route Get /api/user/verify/:id
+// @access Private
+const verifyUser = asyncHandler(async (req, res) => {
+  const username = req.params.id;
+
+  const user = await User.findOne({ username: username });
+  console.log(user);
+  console.log(username);
+  if (!user) {
+    return res.status(200).json({
+      message: 'Username available',
+      available: true
+    });
+  } else {
+    return res.status(200).json({
+      message: 'Username already exists',
+      available: false
+    });
+  }
+
+});
 
 const logOutUser = asyncHandler(async (req, res) => {
   res.clearCookie('refreshToken', { path: '/refresh_token' });
@@ -263,5 +296,6 @@ module.exports = {
   editUser,
   getUserProfile,
   logOutUser,
+  verifyUser,
   refreshToken
 };
