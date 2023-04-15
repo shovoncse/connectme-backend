@@ -7,14 +7,46 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    email: {
+    username: {
       type: String,
+      unique: true,
+    },
+    bio: {
+      type: String,
+      default: 'I am a user of connectme',
+    },
+    profession: {
+      type: String,
+      default: 'Student',
+    },
+    education: {
+      type: String,
+      default: 'OAMK',
+    },
+    location: {
+      type: String,
+      default: 'Finland',
+    },
+    country: {
+      type: String,
+      default: 'Finland',
+    },
+    email: {
+      type: String, 
       required: true,
       unique: true,
     },
     password: {
       type: String,
       required: true,
+    },
+    image: {
+      type: String,
+      default: 'img/default-profile.jpg',
+    },
+    cover: {
+      type: String,
+      default: 'img/default-cover.jpg',
     },
     refreshToken: {
       type: String,
