@@ -7,7 +7,7 @@ const User = require('../models/userModel');
 // @route GET /api/posts
 // @access Private
 const getAllPosts = asyncHandler(async (req, res) => {
-  const posts = await Post.find().populate('user', 'name email');
+  const posts = await Post.find().populate('user', 'name email').sort({ createdAt: -1 });
   res.json(posts);
 });
 
@@ -28,7 +28,7 @@ const getPostById = asyncHandler(async (req, res) => {
 // @route POST /api/posts
 // @access Private
 const createPost = asyncHandler(async (req, res) => {
-  const { postContent } = req.body;
+  const { postContent, image } = req.body;
 
   if (!postContent) {
     res.status(400);
@@ -45,6 +45,7 @@ const createPost = asyncHandler(async (req, res) => {
   const post = await Post.create({
     user: req.user._id,
     postContent: purifyXSS(postContent),
+    image,
   });
 
   res.status(201).json(post);
