@@ -55,11 +55,11 @@ const createPost = asyncHandler(async (req, res) => {
 // @route PUT /api/posts/:id
 // @access Private
 const updatePost = asyncHandler(async (req, res) => {
-  const { postContent } = req.body;
+  const { postContent, image } = req.body;
 
-  if (!postContent) {
+  if (!postContent && !image) {
     res.status(400);
-    throw new Error('Post content is required');
+    throw new Error('Content is required');
   }
 
   const post = await Post.findById(req.params.id);
@@ -75,6 +75,7 @@ const updatePost = asyncHandler(async (req, res) => {
   }
 
   post.postContent = purifyXSS(postContent);
+  post.image = image? image : post.image;
   post.isEdited = true;
   await post.save();
 
