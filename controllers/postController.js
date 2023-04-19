@@ -75,7 +75,7 @@ const updatePost = asyncHandler(async (req, res) => {
   }
 
   post.postContent = purifyXSS(postContent);
-  post.image = image? image : post.image;
+  post.image = image;
   post.isEdited = true;
   await post.save();
 
