@@ -7,7 +7,7 @@ const User = require('../models/userModel');
 // @route GET /api/posts
 // @access Private
 const getAllPosts = asyncHandler(async (req, res) => {
-  const posts = await Post.find().populate('user', 'name email').sort({ createdAt: -1 });
+  const posts = await Post.find().populate('user', 'name email username image').sort({ createdAt: -1 });
   res.json(posts);
 });
 
@@ -30,9 +30,9 @@ const getPostById = asyncHandler(async (req, res) => {
 const createPost = asyncHandler(async (req, res) => {
   const { postContent, image } = req.body;
 
-  if (!postContent) {
+  if (!postContent && !image) {
     res.status(400);
-    throw new Error('Post content is required');
+    throw new Error('Post content / image is required');
   }
 
   const user = await User.findById(req.user._id);
@@ -43,7 +43,7 @@ const createPost = asyncHandler(async (req, res) => {
   }
 
   const post = await Post.create({
-    user: req.user._id,
+    user: req.user,
     postContent: purifyXSS(postContent),
     image,
   });
@@ -55,11 +55,11 @@ const createPost = asyncHandler(async (req, res) => {
 // @route PUT /api/posts/:id
 // @access Private
 const updatePost = asyncHandler(async (req, res) => {
-  const { postContent } = req.body;
+  const { postContent, image } = req.body;
 
-  if (!postContent) {
+  if (!postContent && !image) {
     res.status(400);
-    throw new Error('Post content is required');
+    throw new Error('Content is required');
   }
 
   const post = await Post.findById(req.params.id);
@@ -75,6 +75,7 @@ const updatePost = asyncHandler(async (req, res) => {
   }
 
   post.postContent = purifyXSS(postContent);
+  post.image = image;
   post.isEdited = true;
   await post.save();
 
