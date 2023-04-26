@@ -1,4 +1,5 @@
 const Post = require('../models/postModel');
+const Notification = require('../models/notificationModel');
 const asyncHandler = require('../utils/asyncHandler');
 const { purifyXSS } = require('../utils/purifyXSS');
 const User = require('../models/userModel');
@@ -7,7 +8,17 @@ const User = require('../models/userModel');
 // @route GET /api/posts
 // @access Private
 const getAllPosts = asyncHandler(async (req, res) => {
-  const posts = await Post.find().populate('user', 'name email username image').sort({ createdAt: -1 });
+  //pass commnets and comments user info inside comments
+  const posts = await Post.find({})
+    .populate('user', 'id name username image country')
+    .populate({
+      path: 'comments',
+      populate: {
+        path: 'user',
+        select: 'id name username image country',
+      },
+    })
+    .sort({ createdAt: -1 });
   res.json(posts);
 });
 
@@ -144,7 +155,6 @@ const createComment = asyncHandler(async (req, res) => {
   const comment = createdPost.comments[createdPost.comments.length - 1];
   const user = await User.findById(req.user._id).select('name username image');
   comment.user = user;
-
   res.status(201).json(comment);
 });
 
