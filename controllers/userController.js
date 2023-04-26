@@ -223,8 +223,6 @@ const verifyUser = asyncHandler(async (req, res) => {
   const username = req.params.id;
 
   const user = await User.findOne({ username: username });
-  console.log(user);
-  console.log(username);
   if (!user) {
     return res.status(200).json({
       message: 'Username available',
