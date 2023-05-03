@@ -207,11 +207,19 @@ const getUserProfile = asyncHandler(async (req, res) => {
     location: user.location,
     country: user.country,
     image: user.image,
-    cover: user.cover
+    cover: user.cover,
   };
+
 
   const posts = await Post.find({ user: user._id })
     .populate('user', 'id name username image country')
+    .populate({
+      path: 'comments',
+      populate: {
+        path: 'user',
+        select: 'id name username image country',
+      },
+    })
     .sort({ createdAt: -1 });
   res.json({ user: userData, posts });
 });
