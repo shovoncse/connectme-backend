@@ -207,11 +207,19 @@ const getUserProfile = asyncHandler(async (req, res) => {
     location: user.location,
     country: user.country,
     image: user.image,
-    cover: user.cover
+    cover: user.cover,
   };
+
 
   const posts = await Post.find({ user: user._id })
     .populate('user', 'id name username image country')
+    .populate({
+      path: 'comments',
+      populate: {
+        path: 'user',
+        select: 'id name username image country',
+      },
+    })
     .sort({ createdAt: -1 });
   res.json({ user: userData, posts });
 });
@@ -223,8 +231,6 @@ const verifyUser = asyncHandler(async (req, res) => {
   const username = req.params.id;
 
   const user = await User.findOne({ username: username });
-  console.log(user);
-  console.log(username);
   if (!user) {
     return res.status(200).json({
       message: 'Username available',

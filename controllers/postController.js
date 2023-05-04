@@ -1,4 +1,5 @@
 const Post = require('../models/postModel');
+const Notification = require('../models/notificationModel');
 const asyncHandler = require('../utils/asyncHandler');
 const { purifyXSS } = require('../utils/purifyXSS');
 const User = require('../models/userModel');
@@ -7,7 +8,17 @@ const User = require('../models/userModel');
 // @route GET /api/posts
 // @access Private
 const getAllPosts = asyncHandler(async (req, res) => {
-  const posts = await Post.find().populate('user', 'name email username image').sort({ createdAt: -1 });
+  //pass commnets and comments user info inside comments
+  const posts = await Post.find({})
+    .populate('user', 'id name username image country')
+    .populate({
+      path: 'comments',
+      populate: {
+        path: 'user',
+        select: 'id name username image country',
+      },
+    })
+    .sort({ createdAt: -1 });
   res.json(posts);
 });
 
@@ -102,10 +113,173 @@ const deletePost = asyncHandler(async (req, res) => {
   res.json({ message: 'Post removed' });
 });
 
+// @desc Create a comment
+// @route POST /api/posts/:id
+// @access Private
+const createComment = asyncHandler(async (req, res) => {
+  let { commentContent } = req.body;
+
+  commentContent = purifyXSS(commentContent);
+  const { id } = req.params;
+  const post = await Post.findById(id);
+
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+
+  post.comments.push({
+    user: req.user._id,
+    likes: [],
+    numLikes: 0,
+    isLiked: false,
+    commentContent: commentContent,
+  });
+  post.numComments = post.comments.length;
+  const createdPost = await post.save();
+
+  if (post.user.toString() !== req.user._id.toString()) {
+    const notification = new Notification({
+      receiver: post.user,
+      sender: req.user._id,
+      read: false,
+      action: 'comment',
+      message: 'commented on your post.',
+      link: `/posts/${post._id}`,
+    });
+
+    await notification.save();
+  }
+
+  // return the comment and user info
+  const comment = createdPost.comments[createdPost.comments.length - 1];
+  const user = await User.findById(req.user._id).select('name username image');
+  comment.user = user;
+  res.status(201).json(comment);
+});
+
+// @desc Delete a comment
+// @route DEL /api/posts/:id/:comId
+// @access Private
+const deleteComment = asyncHandler(async (req, res) => {
+  const { id, comId } = req.params;
+  const post = await Post.findById(id);
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+
+  post.comments = post.comments.filter((com) => {
+    return com._id.toString() !== comId.toString();
+  });
+  post.numComments = post.comments.length;
+  await post.save();
+  res.status(201).json({ message: `Deleted the comment` });
+});
+
+// @desc Like a post
+// @route POST /api/posts/:id/like
+// @access Private
+const likePost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const post = await Post.findById(id);
+
+  let task = '';
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+
+  const alreadyLiked = post.likes.find(
+    (r) => r.user.toString() === req.user._id.toString()
+  );
+
+  if (alreadyLiked) {
+    post.likes = post.likes.filter(
+      (r) => r.user.toString() !== req.user._id.toString()
+    );
+    post.numLikes = post.likes.length;
+    task = 'Unliked';
+  } else {
+    post.likes.push({ user: req.user._id });
+    post.numLikes = post.likes.length;
+    task = 'Liked';
+
+    if (post.user.toString() !== req.user._id.toString()) {
+      const notification = new Notification({
+        receiver: post.user,
+        sender: req.user._id,
+        read: false,
+        action: 'like',
+        message: 'liked your post.',
+        link: `/posts/${post._id}`,
+      });
+
+      await notification.save();
+    }
+  }
+
+  await post.save();
+
+  res.status(201).json({ message: `${task} the post` });
+});
+
+// @desc Like a comment
+// @route POST /api/posts/:id/:comId/like
+// @access Private
+const likeComment = asyncHandler(async (req, res) => {
+  const { id, comId } = req.params;
+  const post = await Post.findById(id);
+  let task = '';
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+  post.comments.forEach(async (com) => {
+    if (com._id.toString() === comId.toString()) {
+      const alreadyLiked = com.likes.find(
+        (r) => r.user.toString() === req.user._id.toString()
+      );
+      if (alreadyLiked) {
+        com.likes = com.likes.filter(
+          (r) => r.user.toString() !== req.user._id.toString()
+        );
+        com.numLikes = com.likes.length;
+        task = 'Unliked';
+      } else {
+        com.likes.push({ user: req.user._id });
+        com.numLikes = com.likes.length;
+        task = 'Liked';
+
+        if (com.user.toString() !== req.user._id.toString()) {
+          const notification = new Notification({
+            receiver: com.user,
+            sender: req.user._id,
+            read: false,
+            action: 'like',
+            message: 'liked your comment.',
+            link: `/posts/${post._id}`,
+          });
+
+          await notification.save();
+        }
+      }
+    }
+  });
+  await post.save();
+
+  res.status(201).json({ message: `${task} the comment` });
+});
+
+
 module.exports = {
   getAllPosts,
   getPostById,
   createPost,
   updatePost,
+  likePost,
+  createComment,
+  deleteComment,
+  likeComment,
   deletePost,
 };
